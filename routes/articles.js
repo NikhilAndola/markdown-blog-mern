@@ -3,29 +3,38 @@ const Article = require("../model/articles")
 const router = express.Router();
 
 router.get("/new", (req, res) => {
-    res.render("articles/new")
+    res.render("articles/new", { article: new Article() })
 })
 
-router.get("/", async (req, res) => {
-    const article = await Article.find({})
-    res.send(article).status(201);
+router.get("/:slug", async(req, res) => {
+    const article = await Article.findOne({ slug: req.params.slug })
+    if(article == null) res.redirect("/")
+    res.render('articles/show',  { article: article })
 })
 
-router.post("/",async (req, res) => {
-    console.log("req.body", req.body);
+// router.get("/", async (req, res) => {
+//     let article = await Article.find({})
+//     res.send(article).status(201);
+// })
+
+router.post("/", async (req, res) => {
+    let article = new Article({
+        title: req.body.title,
+        description: req.body.description,
+        markdown: req.body.markdown
+    }) 
     try {
-        const article = new Article({
-            title: req.body.title,
-            description: req.body.description,
-            markdown: req.body.markdown
-        }) 
-
-        await article.save();
-        res.redirect("/")
+        article = await article.save()
+        res.redirect(`/articles/${article.slug}`)
     }catch(err) {
-        res.send().status()
+        console.log("err", err)
+        res.render('articles/new', { article : article })
     }
 })
 
+router.delete("/:id", async (req, res) => {
+    const article = await Article.findByIdAndDelete(req.params.id)
+    res.redirect("/")
+})
 
 module.exports = router;
